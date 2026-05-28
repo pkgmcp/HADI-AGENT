@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workflows — HADI Agent</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h2>HADI</h2><div class="sub">Agent &amp; MCP Framework</div></div>
+    <div class="search-box"><input type="text" placeholder="Search..." oninput="searchDocs(this.value)"></div>
+    <nav class="sidebar-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="getting-started.html">🚀 Getting Started</a>
+      <a href="architecture.html">🏗️ Architecture</a>
+      <div class="section-title">Core Modules</div>
+      <a href="mcp-server.html">⚡ MCP Server</a>
+      <a href="agents.html">🤖 AI Agents</a>
+      <a href="ai-providers.html">🔌 AI Providers</a>
+      <a href="workflows.html" class="active">🔄 Workflows</a>
+      <div class="section-title">Reference</div>
+      <a href="api-reference.html">📡 API Reference</a>
+      <a href="examples.html">💡 Examples</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Workflow Engine <span class="fa-title" lang="fa">موتور گردش کار</span></h1>
+
+    <p>The Workflow Engine enables multi-step, multi-agent task orchestration. Workflows are defined as a series of steps that can include AI prompts, function calls, conditional logic, parallel execution, and agent delegation.</p>
+
+    <h2>Step Types / انواع گام</h2>
+    <table>
+      <tr><th>Type</th><th>Description</th><th>Example</th></tr>
+      <tr><td><code>prompt</code></td><td>Send a prompt to an AI provider</td><td>Generate code, analyze text</td></tr>
+      <tr><td><code>function</code></td><td>Call a PHP function/method</td><td>Data transformation, API calls</td></tr>
+      <tr><td><code>condition</code></td><td>Branch based on previous result</td><td>Check if output is valid</td></tr>
+      <tr><td><code>parallel</code></td><td>Run multiple steps concurrently</td><td>Multi-model analysis</td></tr>
+      <tr><td><code>agent</code></td><td>Delegate to a specialized agent</td><td>Security review, deployment</td></tr>
+    </table>
+
+    <h2>Creating a Workflow / ایجاد گردش کار</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>use App\DTOs\WorkflowDTO;
+use App\Services\MCP\WorkflowEngine;
+
+$engine = app(WorkflowEngine::class);
+
+$dto = new WorkflowDTO(
+    name: 'Code Review Pipeline',
+    steps: [
+        [
+            'name' => 'analyze_code',
+            'type' => 'prompt',
+            'prompt' => 'Review this Laravel code for bugs and issues: {{context.code}}',
+            'config' => ['temperature' => 0.2],
+        ],
+        [
+            'name' => 'security_check',
+            'type' => 'agent',
+            'agent' => 'security',
+            'task' => 'Check code for OWASP vulnerabilities: {{results.analyze_code.content}}',
+        ],
+        [
+            'name' => 'quality_check',
+            'type' => 'condition',
+            'condition' => 'not_empty',
+            'source' => 'security_check',
+            'on_true' => 'generate_report',
+            'on_false' => 'request_changes',
+        ],
+        [
+            'name' => 'generate_report',
+            'type' => 'prompt',
+            'prompt' => 'Summarize all review findings in a markdown report.',
+        ],
+    ],
+    context: ['code' => $codeToReview],
+);
+
+// Create the workflow
+$id = $engine->create($dto);
+
+// Execute it
+$result = $engine->execute($id);
+
+echo "Status: {$result['status']}";
+echo "Steps completed: {$result['steps_completed']}";</pre>
+
+    <h2>Workflow Lifecycle / چرخه حیات</h2>
+    <pre>
+created ──► running ──► completed
+              │
+              ├──► failed
+              │
+              └──► cancelled
+                    │
+                    └──► retrying ──► running
+    </pre>
+
+    <h2>Managing Workflows / مدیریت گردش کار</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// Check status
+$status = $engine->status($workflowId);
+// ['status' => 'running', 'current_step' => 2, 'total_steps' => 4, ...]
+
+// Get specific step result
+$stepResult = $engine->step($workflowId, 'analyze_code');
+
+// Cancel
+$engine->cancel($workflowId);
+
+// Retry (resets errors and re-executes)
+$retryResult = $engine->retry($workflowId);
+
+// Get all active workflows
+$active = $engine->getActiveWorkflows();
+
+// Cleanup old workflows
+$engine->cleanup(24); // Remove workflows older than 24 hours</pre>
+
+    <h2>Prompt Interpolation / درون‌یابی پرامپت</h2>
+    <p>Workflow steps support variable interpolation using <code>{{variable}}</code> syntax:</p>
+    <table>
+      <tr><th>Syntax</th><th>Source</th><th>Example</th></tr>
+      <tr><td><code>{{context.key}}</code></td><td>Workflow context</td><td><code>{{context.code}}</code></td></tr>
+      <tr><td><code>{{results.step_name.content}}</code></td><td>Previous step output</td><td><code>{{results.analyze_code.content}}</code></td></tr>
+    </table>
+
+    <h2>Parallel Execution / اجرای همزمان</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$dto = new WorkflowDTO('Analysis Pipeline', [
+    [
+        'name' => 'parallel_analysis',
+        'type' => 'parallel',
+        'steps' => [
+            [
+                'name' => 'code_quality',
+                'type' => 'prompt',
+                'prompt' => 'Analyze code quality: {{context.code}}',
+            ],
+            [
+                'name' => 'security_scan',
+                'type' => 'prompt',
+                'prompt' => 'Security scan: {{context.code}}',
+            ],
+            [
+                'name' => 'performance',
+                'type' => 'prompt',
+                'prompt' => 'Performance analysis: {{context.code}}',
+            ],
+        ],
+    ],
+    [
+        'name' => 'consolidate',
+        'type' => 'prompt',
+        'prompt' => 'Combine these reports into one: {{results.parallel_analysis}}',
+    ],
+]);</pre>
+
+    <h2>Error Handling / مدیریت خطا</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$dto = new WorkflowDTO('Resilient Pipeline', [
+    [
+        'name' => 'risky_step',
+        'type' => 'prompt',
+        'prompt' => 'Process data...',
+        'continue_on_failure' => true, // Don't stop workflow if this step fails
+    ],
+    [
+        'name' => 'backup_step',
+        'type' => 'function',
+        'function' => 'App\\Actions\\FallbackAction',
+        'arguments' => ['data' => '$risky_step'],
+    ],
+]);</pre>
+
+    <h2>Function Steps / گام‌های تابعی</h2>
+    <p>Call any invokable class or closure:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// Using a class
+$dto = new WorkflowDTO('Data Pipeline', [
+    [
+        'name' => 'transform',
+        'type' => 'function',
+        'function' => App\Actions\TransformDataAction::class,
+        'arguments' => [
+            'input' => '$previous_step',
+            'format' => 'json',
+        ],
+    ],
+]);
+
+// Using a closure
+Config::set('workflow.functions.hello', function ($name) {
+    return "Hello, {$name}!";
+});
+
+$dto = new WorkflowDTO('Test', [
+    [
+        'name' => 'greet',
+        'type' => 'function',
+        'function' => function () { return 'Hello!'; },
+        'arguments' => [],
+    ],
+]);</pre>
+
+    <div class="footer">HADI Agent v1.0.0 — Workflow Engine Documentation</div>
+  </main>
+</div>
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('pre');
+  const code = pre.querySelector(':scope > code') || pre;
+  const text = code.textContent.replace(btn.textContent, '').trim();
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+function searchDocs(q) {
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.style.display = !q.toLowerCase().trim() || a.textContent.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>

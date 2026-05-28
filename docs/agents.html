@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agents — HADI Agent</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h2>HADI</h2><div class="sub">Agent &amp; MCP Framework</div></div>
+    <div class="search-box"><input type="text" placeholder="Search..." oninput="searchDocs(this.value)"></div>
+    <nav class="sidebar-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="getting-started.html">🚀 Getting Started</a>
+      <a href="architecture.html">🏗️ Architecture</a>
+      <div class="section-title">Core Modules</div>
+      <a href="mcp-server.html">⚡ MCP Server</a>
+      <a href="agents.html" class="active">🤖 AI Agents</a>
+      <a href="ai-providers.html">🔌 AI Providers</a>
+      <a href="workflows.html">🔄 Workflows</a>
+      <div class="section-title">Reference</div>
+      <a href="api-reference.html">📡 API Reference</a>
+      <a href="examples.html">💡 Examples</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>AI Agents <span class="fa-title" lang="fa">عامل‌های هوشمند</span></h1>
+
+    <p>HADI ships with 8 specialized AI agents, each designed for a specific role. All agents extend the <code>BaseAgent</code> class and implement the <code>AgentInterface</code>.</p>
+
+    <h2>BaseAgent / عامل پایه</h2>
+    <p>Every agent inherits from <code>App\Services\Agents\BaseAgent</code> which provides:</p>
+    <ul>
+      <li>Automatic token tracking via <code>TokenObserver</code></li>
+      <li>Conversation history management</li>
+      <li>Provider routing with fallback via <code>ProviderRouter</code></li>
+      <li>JSON response parsing</li>
+      <li>Session-scoped configuration</li>
+    </ul>
+
+    <h2>Available Agents / عامل‌های موجود</h2>
+
+    <table>
+      <tr><th>Agent</th><th>Class</th><th>Purpose</th><th>Default Provider</th></tr>
+      <tr>
+        <td><strong>PlannerAgent</strong></td>
+        <td><code>PlannerAgent.php</code></td>
+        <td>Analyzes requests, generates execution plans, estimates effort</td>
+        <td>OpenAI</td>
+      </tr>
+      <tr>
+        <td><strong>CoderAgent</strong></td>
+        <td><code>CoderAgent.php</code></td>
+        <td>Generates production-ready code, refactors, explains code</td>
+        <td>Anthropic</td>
+      </tr>
+      <tr>
+        <td><strong>ReviewAgent</strong></td>
+        <td><code>ReviewAgent.php</code></td>
+        <td>Code reviews, architecture audits, security checks</td>
+        <td>OpenAI</td>
+      </tr>
+      <tr>
+        <td><strong>DebuggerAgent</strong></td>
+        <td><code>DebuggerAgent.php</code></td>
+        <td>Error diagnosis, log analysis, bug fixing, test suggestions</td>
+        <td>Anthropic</td>
+      </tr>
+      <tr>
+        <td><strong>MemoryAgent</strong></td>
+        <td><code>MemoryAgent.php</code></td>
+        <td>Key-value storage, semantic search, conversation history</td>
+        <td>OpenAI</td>
+      </tr>
+      <tr>
+        <td><strong>SecurityAgent</strong></td>
+        <td><code>SecurityAgent.php</code></td>
+        <td>OWASP audits, dependency analysis, security policies</td>
+        <td>Anthropic</td>
+      </tr>
+      <tr>
+        <td><strong>DeploymentAgent</strong></td>
+        <td><code>DeploymentAgent.php</code></td>
+        <td>Deployment plans, Docker files, CI/CD workflows</td>
+        <td>OpenAI</td>
+      </tr>
+      <tr>
+        <td><strong>WorkflowAgent</strong></td>
+        <td><code>WorkflowAgent.php</code></td>
+        <td>Multi-agent orchestration, workflow design &amp; optimization</td>
+        <td>OpenAI</td>
+      </tr>
+    </table>
+
+    <h2>Usage / نحوه استفاده</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// Direct usage
+$planner = app(\App\Services\Agents\PlannerAgent::class);
+$result = $planner->execute('Design a REST API for a blog platform');
+
+// Or via AgentController
+$controller = app(\App\Http\Controllers\AgentController::class);
+$controller->register('planner', $planner);
+
+// Check if agent can handle a task
+if ($planner->canHandle('plan a microservices architecture')) {
+    $plan = $planner->createExecutionPlan('...');
+}</pre>
+
+    <h2>PlannerAgent Methods / متدهای برنامه‌ریز</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$planner = app(\App\Services\Agents\PlannerAgent::class);
+
+// Create execution plan
+$plan = $planner->createExecutionPlan(
+    task: 'Build authentication system',
+    constraints: ['timeline' => '2 weeks', 'team_size' => 3]
+);
+
+// Estimate effort
+$estimate = $planner->estimateEffort('Database migration script');</pre>
+
+    <h2>CoderAgent Methods / متدهای کدنویس</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$coder = app(\App\Services\Agents\CoderAgent::class);
+
+// Generate a file
+$file = $coder->generateFile(
+    path: 'app/Services/UserService.php',
+    specification: 'CRUD service for User model with DTOs and Repository'
+);
+
+// Refactor existing code
+$refactored = $coder->refactorCode(
+    code: $existingCode,
+    instructions: 'Apply SOLID principles, extract service layer'
+);</pre>
+
+    <h2>ReviewAgent Methods / متدهای بازبین</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$reviewer = app(\App\Services\Agents\ReviewAgent::class);
+
+// Code review
+$review = $reviewer->reviewCode($code, 'php');
+
+// Security audit
+$security = $reviewer->checkSecurity($code);
+
+// Architecture review
+$archReview = $reviewer->reviewArchitecture('E-commerce system', $files);</pre>
+
+    <h2>DebuggerAgent Methods / متدهای رفع اشکال</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$debugger = app(\App\Services\Agents\DebuggerAgent::class);
+
+// Diagnose error
+$diagnosis = $debugger->diagnoseError($errorMessage, $code, $stackTrace);
+
+// Analyze logs
+$analysis = $debugger->analyzeLogs($logEntries);</pre>
+
+    <h2>MemoryAgent Methods / متدهای حافظه</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$memory = app(\App\Services\Agents\MemoryAgent::class);
+
+// Store data
+$memory->store('user_preferences', ['theme' => 'dark'], ['source' => 'web']);
+
+// Retrieve
+$prefs = $memory->retrieve('user_preferences');
+
+// Search
+$results = $memory->search('dark theme', 5);
+
+// Get all context
+$context = $memory->context();
+
+// Stats
+$stats = $memory->getStats();</pre>
+
+    <h2>Creating Custom Agents / ساخت عامل سفارشی</h2>
+    <p>Extend <code>BaseAgent</code> and implement the required methods:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>use App\Services\Agents\BaseAgent;
+use App\DTOs\AgentDTO;
+
+class CustomAgent extends BaseAgent
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->config = new AgentDTO(
+            name: 'CustomAgent',
+            type: 'custom',
+            provider: 'openai',
+            model: 'gpt-4o',
+            temperature: 0.3,
+            maxIterations: 5,
+        );
+    }
+
+    public function canHandle(string $task): bool
+    {
+        return str_contains(strtolower($task), 'custom');
+    }
+
+    protected function systemPrompt(): string
+    {
+        return 'You are a custom agent specialized in...';
+    }
+}</pre>
+
+    <h2>Agent Configuration / تنظیمات عامل‌ها</h2>
+    <p>Configure each agent in <code>config/agents.php</code>:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>'agents' => [
+    'planner' => [
+        'class' => App\Services\Agents\PlannerAgent::class,
+        'provider' => env('PLANNER_PROVIDER', 'openai'),
+        'model' => env('PLANNER_MODEL', 'gpt-4o'),
+        'temperature' => env('PLANNER_TEMPERATURE', 0.3),
+        'max_iterations' => 3,
+    ],
+    // ... other agents
+],</pre>
+
+    <div class="footer">HADI Agent v1.0.0 — AI Agent System Documentation</div>
+  </main>
+</div>
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('pre');
+  const code = pre.querySelector(':scope > code') || pre;
+  const text = code.textContent.replace(btn.textContent, '').trim();
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+function searchDocs(q) {
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.style.display = !q.toLowerCase().trim() || a.textContent.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>

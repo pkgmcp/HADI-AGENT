@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Providers — HADI Agent</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h2>HADI</h2><div class="sub">Agent &amp; MCP Framework</div></div>
+    <div class="search-box"><input type="text" placeholder="Search..." oninput="searchDocs(this.value)"></div>
+    <nav class="sidebar-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="getting-started.html">🚀 Getting Started</a>
+      <a href="architecture.html">🏗️ Architecture</a>
+      <div class="section-title">Core Modules</div>
+      <a href="mcp-server.html">⚡ MCP Server</a>
+      <a href="agents.html">🤖 AI Agents</a>
+      <a href="ai-providers.html" class="active">🔌 AI Providers</a>
+      <a href="workflows.html">🔄 Workflows</a>
+      <div class="section-title">Reference</div>
+      <a href="api-reference.html">📡 API Reference</a>
+      <a href="examples.html">💡 Examples</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>AI Providers <span class="fa-title" lang="fa">ارائه‌دهنده‌های هوش مصنوعی</span></h1>
+
+    <p>HADI supports 5 AI providers out of the box, all implementing the <code>AIProviderInterface</code>. Providers are interchangeable — swap them without changing your business logic.</p>
+
+    <h2>Supported Providers / ارائه‌دهنده‌های پشتیبانی‌شده</h2>
+    <table>
+      <tr><th>Provider</th><th>Class</th><th>API Key Required</th><th>Cost Model</th></tr>
+      <tr><td><strong>OpenAI</strong></td><td><code>OpenAIProvider.php</code></td><td>Yes</td><td>Per-model token pricing</td></tr>
+      <tr><td><strong>Anthropic</strong></td><td><code>AnthropicProvider.php</code></td><td>Yes</td><td>Per-model token pricing</td></tr>
+      <tr><td><strong>Gemini</strong></td><td><code>GeminiProvider.php</code></td><td>Yes</td><td>Free tier / pay-as-you-go</td></tr>
+      <tr><td><strong>Ollama</strong></td><td><code>OllamaProvider.php</code></td><td>No (local)</td><td>Free (self-hosted)</td></tr>
+      <tr><td><strong>DeepSeek</strong></td><td><code>DeepSeekProvider.php</code></td><td>Yes</td><td>Pay-as-you-go</td></tr>
+    </table>
+
+    <div class="alert alert-success">💡 Ollama runs 100% locally — no API key needed. Ideal for development, testing, and offline scenarios.</div>
+
+    <h2>Configuration / پیکربندی</h2>
+    <p>All providers are configured through <code>config/mcp.php</code> and <code>.env</code>:</p>
+    <pre><span class="lang-tag">env</span><button class="copy-btn" onclick="copyCode(this)">Copy</button># === OpenAI ===
+OPENAI_API_KEY=sk-proj-...
+OPENAI_MODEL=gpt-4o
+OPENAI_ENDPOINT=https://api.openai.com/v1
+OPENAI_MAX_TOKENS=4096
+OPENAI_TEMPERATURE=0.7
+
+# === Anthropic ===
+ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_MODEL=claude-3-opus-20240229
+ANTHROPIC_TEMPERATURE=0.7
+
+# === Gemini ===
+GEMINI_API_KEY=AIza...
+GEMINI_MODEL=gemini-pro
+
+# === Ollama (local) ===
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama2
+
+# === DeepSeek ===
+DEEPSEEK_API_KEY=sk-...
+DEEPSEEK_MODEL=deepseek-chat
+
+# === LM Studio (local) ===
+LM_STUDIO_BASE_URL=http://localhost:1234</pre>
+
+    <h2>Provider Interface / واسط ارائه‌دهنده</h2>
+    <p>All providers implement <code>App\Interfaces\AIProviderInterface</code>:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>interface AIProviderInterface
+{
+    public function send(AIRequestDTO $request): AIResponseDTO;
+    public function stream(AIRequestDTO $request): iterable;
+    public function name(): string;
+    public function isAvailable(): bool;
+    public function models(): array;
+    public function calculateCost(int $inputTokens, int $outputTokens): float;
+}</pre>
+
+    <h2>Provider Router Strategies / استراتژی‌های مسیریابی</h2>
+    <p>Configure the routing strategy in <code>.env</code>:</p>
+    <pre><span class="lang-tag">env</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>AI_ROUTING_STRATEGY=latency   # Options: latency, cost, random
+AI_FALLBACK_ENABLED=true
+AI_FALLBACK_PROVIDER=ollama   # Fallback when preferred provider fails</pre>
+
+    <h2>Using Providers Directly / استفاده مستقیم</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// Direct provider usage
+$openai = app(\App\Services\AI\OpenAIProvider::class);
+
+if ($openai->isAvailable()) {
+    $response = $openai->send(
+        new \App\DTOs\AIRequestDTO(
+            prompt: 'Hello world',
+            provider: 'openai',
+            model: 'gpt-4o',
+            temperature: 0.7,
+            maxTokens: 4096,
+        )
+    );
+
+    echo $response->content;
+    echo "Cost: \${$response->cost}";
+    echo "Latency: {$response->latencyMs}ms";
+}</pre>
+
+    <h2>Streaming Responses / پاسخ‌های流</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// Stream from any provider
+$provider = app(\App\Services\AI\AnthropicProvider::class);
+
+foreach ($provider->stream($request) as $chunk) {
+    echo $chunk;
+    ob_flush();
+    flush();
+}</pre>
+
+    <h2>Cost Comparison / مقایسه هزینه</h2>
+    <table>
+      <tr><th>Provider</th><th>Model</th><th>Input (per 1K tokens)</th><th>Output (per 1K tokens)</th></tr>
+      <tr><td>OpenAI</td><td>gpt-4o</td><td>$0.01</td><td>$0.03</td></tr>
+      <tr><td>Anthropic</td><td>claude-3-opus</td><td>$0.015</td><td>$0.075</td></tr>
+      <tr><td>Anthropic</td><td>claude-3-haiku</td><td>$0.00025</td><td>$0.00125</td></tr>
+      <tr><td>DeepSeek</td><td>deepseek-chat</td><td>$0.00014</td><td>$0.00028</td></tr>
+      <tr><td>Ollama</td><td>llama2 (local)</td><td>Free</td><td>Free</td></tr>
+    </table>
+
+    <h2>Adding a Custom Provider / افزودن ارائه‌دهنده سفارشی</h2>
+    <p>Implement the <code>AIProviderInterface</code> and register it with the MCPServer:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>use App\Interfaces\AIProviderInterface;
+
+class CustomLLMProvider implements AIProviderInterface
+{
+    // Implement all interface methods...
+}
+
+// Register with MCP Server
+$server = app(\App\Services\MCP\MCPServer::class);
+$server->registerProvider('custom-llm', new CustomLLMProvider);
+
+// Or add to HadiServiceProvider
+private function registerProviders(MCPServer $server): void
+{
+    // ... existing providers
+    $server->registerProvider('custom-llm', app(CustomLLMProvider::class));
+}</pre>
+
+    <h2>Rate Limiting / محدودیت نرخ</h2>
+    <p>Configure rate limiting per IP or user:</p>
+    <pre><span class="lang-tag">env</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>AI_RATE_LIMIT_ENABLED=true
+AI_MAX_REQUESTS_PER_MINUTE=60
+AI_MAX_TOKENS_PER_MINUTE=100000</pre>
+
+    <div class="footer">HADI Agent v1.0.0 — AI Provider Documentation</div>
+  </main>
+</div>
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('pre');
+  const code = pre.querySelector(':scope > code') || pre;
+  const text = code.textContent.replace(btn.textContent, '').trim();
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+function searchDocs(q) {
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.style.display = !q.toLowerCase().trim() || a.textContent.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>

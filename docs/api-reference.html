@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Reference — HADI Agent</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h2>HADI</h2><div class="sub">Agent &amp; MCP Framework</div></div>
+    <div class="search-box"><input type="text" placeholder="Search..." oninput="searchDocs(this.value)"></div>
+    <nav class="sidebar-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="getting-started.html">🚀 Getting Started</a>
+      <a href="architecture.html">🏗️ Architecture</a>
+      <div class="section-title">Core Modules</div>
+      <a href="mcp-server.html">⚡ MCP Server</a>
+      <a href="agents.html">🤖 AI Agents</a>
+      <a href="ai-providers.html">🔌 AI Providers</a>
+      <a href="workflows.html">🔄 Workflows</a>
+      <div class="section-title">Reference</div>
+      <a href="api-reference.html" class="active">📡 API Reference</a>
+      <a href="examples.html">💡 Examples</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>API Reference <span class="fa-title" lang="fa">مرجع API</span></h1>
+    <p>Complete REST API documentation for all HADI endpoints. Base path: <code>/api/v1</code></p>
+
+    <div class="alert alert-warning">⚠️ All POST/PUT requests require <code>Content-Type: application/json</code> header.</div>
+
+    <h2>System / سیستم</h2>
+
+    <table>
+      <tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th></tr>
+      <tr><td>GET</td><td><code>/api/v1/health</code></td><td>System health check</td><td>No</td></tr>
+      <tr><td>GET</td><td><code>/api/v1/status</code></td><td>System status with agents &amp; providers</td><td>No</td></tr>
+    </table>
+
+    <pre><span class="lang-tag">http</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>GET /api/v1/health
+
+Response 200:
+{
+    "status": "operational",
+    "service": "HADI Agent",
+    "version": "1.0.0",
+    "timestamp": "2026-05-28T10:30:00+00:00"
+}</pre>
+
+    <pre><span class="lang-tag">http</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>GET /api/v1/status
+
+Response 200:
+{
+    "agents": { ... },
+    "providers": { ... },
+    "environment": "local"
+}</pre>
+
+    <h2>MCP Server / سرور MCP</h2>
+
+    <table>
+      <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+      <tr><td>POST</td><td><code>/api/v1/mcp/messages</code></td><td>Send a message to MCP server</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/mcp/messages/stream</code></td><td>Streaming message to MCP server</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/mcp/broadcast</code></td><td>Send message to all providers</td></tr>
+      <tr><td>GET</td><td><code>/api/v1/mcp/status</code></td><td>MCP server status &amp; metrics</td></tr>
+      <tr><td>GET</td><td><code>/api/v1/mcp/health</code></td><td>MCP health check</td></tr>
+      <tr><td>GET</td><td><code>/api/v1/mcp/providers</code></td><td>List registered AI providers</td></tr>
+    </table>
+
+    <h4>POST /api/v1/mcp/messages</h4>
+    <pre><span class="lang-tag">http</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>POST /api/v1/mcp/messages
+Content-Type: application/json
+
+{
+    "role": "user",
+    "content": "Generate a Laravel API for a blog",
+    "metadata": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.3,
+        "session_id": "sess_abc123"
+    }
+}
+
+Response 200:
+{
+    "data": {
+        "content": "Here is a Laravel blog API...",
+        "provider": "openai",
+        "model": "gpt-4o",
+        "input_tokens": 25,
+        "output_tokens": 350,
+        "total_tokens": 375,
+        "cost": 0.0115,
+        "latency_ms": 2450
+    }
+}</pre>
+
+    <h4>POST /api/v1/mcp/broadcast</h4>
+    <pre><span class="lang-tag">http</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>POST /api/v1/mcp/broadcast
+
+{
+    "role": "user",
+    "content": "What is the capital of France?"
+}
+
+Response 200:
+{
+    "data": [
+        {"provider": "openai", "response": {...}},
+        {"provider": "anthropic", "response": {...}},
+        {"provider": "ollama", "response": {...}}
+    ]
+}</pre>
+
+    <h4>GET /api/v1/mcp/status</h4>
+    <pre><span class="lang-tag">http</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>GET /api/v1/mcp/status
+
+Response 200:
+{
+    "data": {
+        "providers": {
+            "openai": {"available": true, "models": ["gpt-4o", ...]},
+            "anthropic": {"available": true, "models": ["claude-3", ...]}
+        },
+        "token_usage": {"daily_tokens": 15000, "total_sessions": 8},
+        "costs": {"total": 0.45, "by_provider": {...}},
+        "uptime": {"status": "operational"}
+    }
+}</pre>
+
+    <h2>AI Agents / عامل‌های هوشمند</h2>
+
+    <table>
+      <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+      <tr><td>GET</td><td><code>/api/v1/agents</code></td><td>List all registered agents</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/agents/{agent}/execute</code></td><td>Execute an agent with a task</td></tr>
+      <tr><td>GET</td><td><code>/api/v1/agents/{agent}</code></td><td>Get agent info</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/agents/{agent}/reset</code></td><td>Reset agent history</td></tr>
+    </table>
+
+    <pre><span class="lang-tag">http</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>POST /api/v1/agents/planner/execute
+
+{
+    "task": "Plan a microservices migration for a monolith",
+    "context": {
+        "session_id": "sess_abc",
+        "constraints": {"timeline": "3 months"}
+    }
+}
+
+Response 200:
+{
+    "data": {
+        "agent": "PlannerAgent",
+        "response": "Execution plan with 5 phases...",
+        "tokens": 850,
+        "cost": 0.025,
+        "latency_ms": 3200
+    }
+}</pre>
+
+    <h2>Workflows / گردش کار</h2>
+
+    <table>
+      <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+      <tr><td>POST</td><td><code>/api/v1/workflows</code></td><td>Create a new workflow</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/workflows/{id}/execute</code></td><td>Execute a workflow</td></tr>
+      <tr><td>GET</td><td><code>/api/v1/workflows/{id}/status</code></td><td>Get workflow status</td></tr>
+      <tr><td>GET</td><td><code>/api/v1/workflows/{id}/step/{step}</code></td><td>Get step result</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/workflows/{id}/cancel</code></td><td>Cancel a workflow</td></tr>
+      <tr><td>POST</td><td><code>/api/v1/workflows/{id}/retry</code></td><td>Retry a failed workflow</td></tr>
+    </table>
+
+    <pre><span class="lang-tag">http</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>POST /api/v1/workflows
+
+{
+    "name": "Code Review Pipeline",
+    "steps": [
+        {
+            "name": "analyze",
+            "type": "prompt",
+            "prompt": "Review code: {{context.code}}"
+        },
+        {
+            "name": "security_check",
+            "type": "agent",
+            "agent": "security",
+            "task": "Check for vulnerabilities"
+        }
+    ],
+    "context": {"code": "<?php ..."}
+}
+
+Response 201:
+{
+    "data": {
+        "workflow_id": "wf_abc123",
+        "status": "created"
+    }
+}</pre>
+
+    <pre><span class="lang-tag">http</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>POST /api/v1/workflows/wf_abc123/execute
+
+Response 200:
+{
+    "data": {
+        "workflow_id": "wf_abc123",
+        "status": "completed",
+        "steps_completed": 2,
+        "total_steps": 2,
+        "results": {
+            "analyze": {"content": "...", "tokens": 500},
+            "security_check": {"content": "...", "tokens": 300}
+        },
+        "errors": []
+    }
+}</pre>
+
+    <h2>Common Error Responses / پاسخ‌های خطا</h2>
+    <table>
+      <tr><th>Status</th><th>Meaning</th><th>Common Cause</th></tr>
+      <tr><td>422</td><td>Validation Error</td><td>Missing required fields, invalid role</td></tr>
+      <tr><td>429</td><td>Rate Limit Exceeded</td><td>Too many requests per minute</td></tr>
+      <tr><td>404</td><td>Not Found</td><td>Unknown agent or workflow ID</td></tr>
+      <tr><td>500</td><td>Server Error</td><td>AI provider failure, database error</td></tr>
+    </table>
+
+    <pre><span class="lang-tag">http</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>422 Validation Error:
+{
+    "message": "The role field is required. (and 1 more error)",
+    "errors": {
+        "role": ["The role field is required."],
+        "content": ["The content field is required."]
+    }
+}
+
+429 Rate Limit:
+{
+    "success": false,
+    "message": "Rate limit exceeded. Please try again later.",
+    "retry_after": 60
+}</pre>
+
+    <h2>Request Headers / هدرهای درخواست</h2>
+    <table>
+      <tr><th>Header</th><th>Description</th><th>Required</th></tr>
+      <tr><td><code>Content-Type</code></td><td><code>application/json</code> for POST/PUT</td><td>Yes</td></tr>
+      <tr><td><code>X-Session-Id</code></td><td>Session tracking ID</td><td>Optional</td></tr>
+      <tr><td><code>Authorization</code></td><td>Bearer token (if authentication enabled)</td><td>Optional</td></tr>
+    </table>
+
+    <div class="alert alert-info">💡 The <code>X-Session-Id</code> header is used for token tracking across requests. If not provided, an anonymous session ID is generated from the client's IP.</div>
+
+    <div class="footer">HADI Agent v1.0.0 — API Reference</div>
+  </main>
+</div>
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('pre');
+  const code = pre.querySelector(':scope > code') || pre;
+  const text = code.textContent.replace(btn.textContent, '').trim();
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+function searchDocs(q) {
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.style.display = !q.toLowerCase().trim() || a.textContent.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>

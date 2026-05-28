@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP Server — HADI Agent</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h2>HADI</h2><div class="sub">Agent &amp; MCP Framework</div></div>
+    <div class="search-box"><input type="text" placeholder="Search..." oninput="searchDocs(this.value)"></div>
+    <nav class="sidebar-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="getting-started.html">🚀 Getting Started</a>
+      <a href="architecture.html">🏗️ Architecture</a>
+      <div class="section-title">Core Modules</div>
+      <a href="mcp-server.html" class="active">⚡ MCP Server</a>
+      <a href="agents.html">🤖 AI Agents</a>
+      <a href="ai-providers.html">🔌 AI Providers</a>
+      <a href="workflows.html">🔄 Workflows</a>
+      <div class="section-title">Reference</div>
+      <a href="api-reference.html">📡 API Reference</a>
+      <a href="examples.html">💡 Examples</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>MCP Server <span class="fa-title" lang="fa">سرور MCP</span></h1>
+
+    <p>The MCP (Model Context Protocol) Server is the core routing and orchestration layer. It manages AI provider connections, tracks token usage, analyzes costs, maintains conversation context, and compresses prompts.</p>
+
+    <h2>Architecture / معماری</h2>
+    <pre>
+┌──────────────────────────────────────────┐
+│              MCPServer                    │
+│  ┌──────────┐  ┌──────────┐  ┌────────┐ │
+│  │ Provider │  │  Token   │  │  Cost  │ │
+│  │  Router  │  │ Observer │  │Analyzer│ │
+│  └──────────┘  └──────────┘  └────────┘ │
+│  ┌──────────┐  ┌──────────┐             │
+│  │ Context  │  │ Prompt   │             │
+│  │ Manager  │  │ Reducer  │             │
+│  └──────────┘  └──────────┘             │
+└──────────────────────────────────────────┘
+    </pre>
+
+    <h2>ProviderRouter / مسیریاب ارائه‌دهنده</h2>
+    <p>The ProviderRouter handles intelligent AI provider selection with three strategies:</p>
+
+    <table>
+      <tr><th>Strategy</th><th>Description / توضیحات</th><th>Use Case</th></tr>
+      <tr><td><code>latency</code></td><td>Picks provider with lowest historical latency</td><td>Chat applications, real-time features</td></tr>
+      <tr><td><code>cost</code></td><td>Picks cheapest provider for given token count</td><td>Batch processing, cost-sensitive workloads</td></tr>
+      <tr><td><code>random</code></td><td>Random selection among available providers</td><td>Load testing, traffic distribution</td></tr>
+    </table>
+
+    <p>If the preferred provider is unavailable, the router automatically falls back to the next best option:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// Automatic fallback chain
+$response = $router->routeWithFallback($request);
+// Tries: preferred → next best → fail → throws RuntimeError</pre>
+
+    <h2>TokenObserver / ردیاب توکن</h2>
+    <p>Real-time token tracking with storage, alerts, and session-level monitoring:</p>
+
+    <div class="card-grid">
+      <div class="card"><h4>📊 Database Storage</h4><p>All token usage persisted to <code>mcp_token_usage</code> table for historical analysis.</p></div>
+      <div class="card"><h4>⚠️ Threshold Alerts</h4><p>Configurable token thresholds trigger warning logs when exceeded.</p></div>
+      <div class="card"><h4>💵 Cost Tracking</h4><p>Per-provider and per-model cost tracking with daily accumulation.</p></div>
+      <div class="card"><h4>📈 Cache Integration</h4><p>Daily and session token counts cached for fast access.</p></div>
+    </div>
+
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// Manual token tracking
+$observer = app(\App\Services\MCP\TokenObserver::class);
+$observer->track(
+    provider: 'openai',
+    model: 'gpt-4o',
+    inputTokens: 150,
+    outputTokens: 75,
+    cost: 0.0045,
+    latencyMs: 320,
+    sessionId: 'user_session_123',
+    action: 'mcp.handle',
+);
+
+// Get summary
+$summary = $observer->summary('user_session_123');
+// ['session_id' => '...', 'total_tokens' => 225, 'total_cost' => 0.0045]</pre>
+
+    <h2>CostAnalyzer / تحلیلگر هزینه</h2>
+    <p>Track and analyze AI costs with budget management:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$analyzer = app(\App\Services\MCP\CostAnalyzer::class);
+
+// Record a response cost
+$analyzer->record($aiResponse);
+
+// Get full summary
+$analyzer->summary();
+// ['daily' => [...], 'by_provider' => [...], 'total' => 2.50]
+
+// Budget utilization
+$analyzer->budgetUtilization();
+// ['budget' => 100.00, 'spent' => 12.50, 'remaining' => 87.50, 'utilization_percent' => 12.5]
+
+// Project next 30 days
+$analyzer->projection(30);
+// 35.70 (estimated)</pre>
+
+    <h2>ContextManager / مدیر متن</h2>
+    <p>Session-aware conversation context with automatic trimming:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$manager = app(\App\Services\MCP\ContextManager::class);
+
+// Build context from message (auto-trims if over limit)
+$context = $manager->build($message);
+
+// Add external context to session
+$manager->addContext('session_123', [
+    ['role' => 'system', 'content' => 'You are a helpful assistant.'],
+]);
+
+// Get current context size
+$size = $manager->getContextSize('session_123');
+
+// Summarize conversation
+$summary = $manager->summarize('session_123');</pre>
+
+    <h2>PromptReducer / کاهش‌دهنده پرامپت</h2>
+    <p>Intelligently compress prompts to fit within context limits:</p>
+    <table>
+      <tr><th>Method</th><th>Description</th></tr>
+      <tr><td><code>reduce()</code></td><td>Checks context size and compresses if over threshold</td></tr>
+      <tr><td><code>compress()</code></td><td>Summarizes older messages, keeps recent ones intact</td></tr>
+      <tr><td><code>foldMessages()</code></td><td>Folds multiple messages into a single summary string</td></tr>
+      <tr><td><code>truncateToTokens()</code></td><td>Truncates text to fit within a token budget</td></tr>
+      <tr><td><code>compressPrompt()</code></td><td>Removes redundant blank lines and whitespace</td></tr>
+    </table>
+
+    <h2>MCPClient / کلاینت MCP</h2>
+    <p>HTTP client for communicating with external MCP servers:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$client = new \App\Services\MCP\MCPClient;
+$client->setEndpoint('https://remote-mcp-server.com/api/mcp');
+$client->setHeader('Authorization', 'Bearer token');
+
+// Send message
+$response = $client->send(new MCPMessageDTO('user', 'Hello remote MCP'));
+
+// Stream response
+foreach ($client->stream($message) as $chunk) {
+    echo $chunk;
+}
+
+// Check health
+$health = $client->health();</pre>
+
+    <div class="footer">HADI Agent v1.0.0 — MCP Server Documentation</div>
+  </main>
+</div>
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('pre');
+  const code = pre.querySelector(':scope > code') || pre;
+  const text = code.textContent.replace(btn.textContent, '').trim();
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+function searchDocs(q) {
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.style.display = !q.toLowerCase().trim() || a.textContent.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>

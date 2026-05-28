@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture — HADI Agent</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h2>HADI</h2><div class="sub">Agent &amp; MCP Framework</div></div>
+    <div class="search-box"><input type="text" placeholder="Search..." oninput="searchDocs(this.value)"></div>
+    <nav class="sidebar-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="getting-started.html">🚀 Getting Started</a>
+      <a href="architecture.html" class="active">🏗️ Architecture</a>
+      <div class="section-title">Core Modules</div>
+      <a href="mcp-server.html">⚡ MCP Server</a>
+      <a href="agents.html">🤖 AI Agents</a>
+      <a href="ai-providers.html">🔌 AI Providers</a>
+      <a href="workflows.html">🔄 Workflows</a>
+      <div class="section-title">Reference</div>
+      <a href="api-reference.html">📡 API Reference</a>
+      <a href="examples.html">💡 Examples</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Architecture <span class="fa-title" lang="fa">معماری HADI</span></h1>
+
+    <p>HADI follows clean architecture with strict separation of concerns. The system is organized into distinct layers, each with a single responsibility.</p>
+
+    <h2>Layer Diagram / نمودار لایه‌ها</h2>
+    <pre>
+┌──────────────────────────────────────────────────────────────┐
+│                    PRESENTATION LAYER                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
+│  │  Controllers  │  │ FormRequests │  │  API Resources   │   │
+│  │  (thin)       │  │ (validation) │  │  (transforms)    │   │
+│  └──────┬───────┘  └──────┬───────┘  └────────┬─────────┘   │
+├─────────┼──────────────────┼────────────────────┼────────────┤
+│         └──────────────────┼────────────────────┘            │
+│                    ┌───────▼────────┐                        │
+│                    │  Middleware     │                        │
+│                    │  (RateLimit,    │                        │
+│                    │   TokenTracking)│                        │
+│                    └───────┬────────┘                        │
+├────────────────────────────┼──────────────────────────────────┤
+│                  ORCHESTRATION LAYER                          │
+│  ┌──────────────┐  ┌───────▼────────┐  ┌─────────────────┐   │
+│  │  MCP Server   │  │  Agent System  │  │ WorkflowEngine  │   │
+│  │  (MCPServer)  │  │  (8 agents)   │  │  (step exec)    │   │
+│  └──────┬───────┘  └───────┬────────┘  └────────┬────────┘   │
+├─────────┼──────────────────┼────────────────────┼────────────┤
+│         └──────────────────┼────────────────────┘            │
+│                    ┌───────▼────────┐                         │
+│                    │ ProviderRouter │                         │
+│                    │ (fallback,     │                         │
+│                    │  load balance) │                         │
+│                    └───────┬────────┘                         │
+├────────────────────────────┼──────────────────────────────────┤
+│                  PROVIDER LAYER                               │
+│  ┌────────┐ ┌─────────┐ ┌────────┐ ┌────────┐ ┌──────────┐  │
+│  │ OpenAI  │ │Anthropic│ │ Gemini │ │ Ollama │ │ DeepSeek │  │
+│  └────────┘ └─────────┘ └────────┘ └────────┘ └──────────┘  │
+├──────────────────────────────────────────────────────────────┤
+│                  DATA LAYER                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
+│  │  DTOs         │  │  Repositories│  │   Models         │   │
+│  │  (immutable)  │  │  (data acc.) │  │   (Eloquent)     │   │
+│  └──────────────┘  └──────────────┘  └──────────────────┘   │
+└──────────────────────────────────────────────────────────────┘
+    </pre>
+
+    <h2>Key Principles / اصول کلیدی</h2>
+    <div class="card-grid">
+      <div class="card"><h4>🎯 Single Responsibility</h4><p>Each class has one clear purpose. Controllers handle HTTP, Services contain logic, DTOs transfer data.</p></div>
+      <div class="card"><h4>🔌 Dependency Inversion</h4><p>High-level modules depend on abstractions (Interfaces), not concrete implementations.</p></div>
+      <div class="card"><h4>📦 Immutable DTOs</h4><p>All Data Transfer Objects are readonly. Data flows one direction through the system.</p></div>
+      <div class="card"><h4>🔄 Provider Agnostic</h4><p>AI providers are interchangeable via the AIProviderInterface. Swap providers without code changes.</p></div>
+      <div class="card"><h4>🧩 Modular Services</h4><p>Each service is independently testable and replaceable. Clear boundaries between MCP, Agents, and Workflows.</p></div>
+      <div class="card"><h4>📊 Observable by Default</h4><p>Token usage, costs, latency — all tracked automatically. No extra instrumentation needed.</p></div>
+    </div>
+
+    <h2>Request Flow / جریان درخواست</h2>
+    <pre>
+Client Request
+     │
+     ▼
+┌─────────────┐
+│  Middleware  │  ← RateLimit, TokenTracking
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│  Controller  │  ← Validates, delegates
+└──────┬──────┘
+       ▼
+┌──────────────────┐
+│  Service Layer   │  ← Business logic
+│  (MCP/Agent/WF)  │
+└──────┬───────────┘
+       ▼
+┌──────────────────┐
+│  ProviderRouter  │  ← Resolves AI provider
+└──────┬───────────┘
+       ▼
+┌──────────────────┐
+│  AI Provider     │  ← OpenAI/Anthropic/etc
+└──────┬───────────┘
+       ▼
+┌──────────────────┐
+│  TokenObserver   │  ← Logs usage
+└──────────────────┘
+       │
+       ▼
+    Response
+    </pre>
+
+    <h2>Data Flow / جریان داده</h2>
+    <table>
+      <tr><th>Stage</th><th>Component</th><th>Input</th><th>Output</th></tr>
+      <tr><td>1</td><td>MCPMessageRequest</td><td>Raw HTTP</td><td>Validated DTO</td></tr>
+      <tr><td>2</td><td>MCPController</td><td>MCPMessageDTO</td><td>Delegated to Service</td></tr>
+      <tr><td>3</td><td>MCPServer</td><td>MCPMessageDTO</td><td>AIRequestDTO</td></tr>
+      <tr><td>4</td><td>ProviderRouter</td><td>AIRequestDTO</td><td>Resolved provider</td></tr>
+      <tr><td>5</td><td>AIProvider</td><td>AIRequestDTO</td><td>AIResponseDTO</td></tr>
+      <tr><td>6</td><td>TokenObserver</td><td>Response data</td><td>Usage record</td></tr>
+      <tr><td>7</td><td>MCPController</td><td>AIResponseDTO</td><td>MCPMessageResource</td></tr>
+    </table>
+
+    <h2>Package Structure / ساختار پکیج</h2>
+    <pre>
+hadi/
+├── config/          ← mcp.php, agents.php, ai.php
+├── database/
+│   └── migrations/  ← 5 migration files
+├── app/
+│   ├── DTOs/        ← 6 immutable DTOs
+│   ├── Interfaces/  ← 5 contracts
+│   ├── Services/
+│   │   ├── MCP/     ← 8 services
+│   │   ├── AI/      ← 5 providers
+│   │   └── Agents/  ← 1 base + 8 agents
+│   ├── Repositories/← 3 repositories
+│   ├── Http/        ← Controllers, Requests, Resources, Middleware
+│   ├── Models/      ← 5 Eloquent models
+│   ├── Traits/      ← 2 reusable traits
+│   └── Support/     ← ServiceProvider, JsonResponse
+├── tests/           ← 25+ test files
+├── docs/            ← This documentation
+└── routes/          ← api.php, mcp.php, agents.php, workflows.php
+    </pre>
+
+    <div class="footer">HADI Agent v1.0.0 — Clean Architecture for Laravel AI</div>
+  </main>
+</div>
+<script>
+function searchDocs(q) {
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.style.display = !q.toLowerCase().trim() || a.textContent.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>

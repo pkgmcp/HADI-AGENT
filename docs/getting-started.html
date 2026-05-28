@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Getting Started — HADI Agent</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>HADI</h2>
+      <div class="sub">Agent &amp; MCP Framework</div>
+    </div>
+    <div class="search-box">
+      <input type="text" placeholder="Search..." oninput="searchDocs(this.value)">
+    </div>
+    <nav class="sidebar-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="getting-started.html" class="active">🚀 Getting Started</a>
+      <a href="architecture.html">🏗️ Architecture</a>
+      <div class="section-title">Core Modules</div>
+      <a href="mcp-server.html">⚡ MCP Server</a>
+      <a href="agents.html">🤖 AI Agents</a>
+      <a href="ai-providers.html">🔌 AI Providers</a>
+      <a href="workflows.html">🔄 Workflows</a>
+      <div class="section-title">Reference</div>
+      <a href="api-reference.html">📡 API Reference</a>
+      <a href="examples.html">💡 Examples</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h1>
+      Getting Started
+      <span class="fa-title" lang="fa">شروع کار با HADI</span>
+    </h1>
+
+    <h2>Installation / نصب</h2>
+    <p>HADI follows standard Laravel package conventions. Add the package via Composer:</p>
+    <pre><span class="lang-tag">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>composer require hadi/hadi-agent</pre>
+
+    <h3>Publish Configuration / انتشار تنظیمات</h3>
+    <p>Publish the configuration files and migrations:</p>
+    <pre><span class="lang-tag">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>php artisan vendor:publish --tag=hadi-config
+php artisan vendor:publish --tag=hadi-migrations
+php artisan migrate</pre>
+    <div class="fa-note" lang="fa">
+      با اجرای دستورات بالا، فایل‌های کانفیگ (mcp.php, agents.php, ai.php) و میگریشن‌های دیتابیس انتشار می‌یابند.
+    </div>
+
+    <h3>Service Provider / ثبت سرویس</h3>
+    <p>Add the service provider to <code>config/app.php</code>:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>'providers' => [
+    // ...
+    App\Support\HadiServiceProvider::class,
+],</pre>
+
+    <h2>Configuration / پیکربندی</h2>
+    <p>Configure your AI providers in the <code>.env</code> file:</p>
+    <pre><span class="lang-tag">env</span><button class="copy-btn" onclick="copyCode(this)">Copy</button># OpenAI
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o
+
+# Anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_MODEL=claude-3-opus-20240229
+
+# Ollama (local)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama2
+
+# Gemini
+GEMINI_API_KEY=...
+DEEPSEEK_API_KEY=...</pre>
+
+    <div class="alert alert-info">
+      💡 At least one provider must be configured. Ollama works locally without an API key. All other providers require a valid API key.
+    </div>
+
+    <h2>Quick Usage / استفاده سریع</h2>
+
+    <h3>1. Send a Message to MCP</h3>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$server = app(\App\Services\MCP\MCPServer::class);
+
+$response = $server->handle(
+    new \App\DTOs\MCPMessageDTO(
+        role: 'user',
+        content: 'Explain Laravel queues',
+        metadata: [
+            'provider' => 'openai',
+            'temperature' => 0.3,
+        ],
+    )
+);
+
+echo $response->content;
+echo "Tokens: {$response->totalTokens()}";
+echo "Cost: \${$response->cost}";</pre>
+
+    <h3>2. Execute an Agent</h3>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$planner = app(\App\Services\Agents\PlannerAgent::class);
+
+$result = $planner->execute(
+    task: 'Design a microservices architecture for an e-commerce platform',
+    context: ['domain' => 'e-commerce', 'scale' => 'medium'],
+);
+
+echo $result->content;</pre>
+
+    <h3>3. Create a Workflow</h3>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$engine = app(\App\Services\MCP\WorkflowEngine::class);
+
+$dto = new \App\DTOs\WorkflowDTO(
+    name: 'Code Review Pipeline',
+    steps: [
+        ['name' => 'analyze', 'type' => 'prompt', 'prompt' => 'Review this code...'],
+        ['name' => 'security', 'type' => 'agent', 'agent' => 'security', 'task' => 'Check for vulnerabilities'],
+        ['name' => 'approve', 'type' => 'condition', 'condition' => 'not_empty', 'source' => 'security'],
+    ],
+);
+
+$id = $engine->create($dto);
+$result = $engine->execute($id);</pre>
+
+    <h2>Directory Structure / ساختار دایرکتوری</h2>
+    <pre>
+app/
+├── Actions/
+├── DTOs/              &lt;- Data Transfer Objects
+├── Http/
+│   ├── Controllers/   &lt;- MCP, Agent, Workflow controllers
+│   ├── Middleware/     &lt;- RateLimit, TokenTracking
+│   ├── Requests/      &lt;- Form request validation
+│   └── Resources/     &lt;- API resource transformers
+├── Interfaces/        &lt;- AIProvider, Agent, MCP, Workflow interfaces
+├── Models/
+│   ├── AI/            &lt;- AgentExecution, WorkflowExecution
+│   ├── MCP/           &lt;- Conversation, TokenUsage
+├── Repositories/      &lt;- Data access layer
+├── Services/
+│   ├── MCP/           &lt;- Server, Client, Router, Observer, Engine
+│   ├── AI/            &lt;- Provider implementations
+│   ├── Agents/        &lt;- 8 specialized agents
+│   └── Workflows/     &lt;- Workflow definitions
+├── Support/           &lt;- ServiceProvider, helpers
+└── Traits/            &lt;- HasTokens, HasLogger</pre>
+
+    <h2>Testing / تست</h2>
+    <p>HADI ships with a comprehensive test suite. Run tests with Pest:</p>
+    <pre><span class="lang-tag">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button># Run all tests
+./vendor/bin/pest
+
+# Run specific test groups
+./vendor/bin/pest --filter=MCP
+./vendor/bin/pest --filter=Agents
+./vendor/bin/pest --filter=Workflows
+
+# Run with coverage
+./vendor/bin/pest --coverage</pre>
+
+    <div class="footer">
+      HADI Agent v1.0.0 — <a href="index.html">Home</a> • <a href="architecture.html">Architecture</a> • <a href="api-reference.html">API</a>
+    </div>
+  </main>
+</div>
+
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('pre');
+  const code = pre.querySelector(':scope > code') || pre;
+  const text = code.textContent.replace(btn.textContent, '').trim();
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+function searchDocs(q) {
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.style.display = !q.toLowerCase().trim() || a.textContent.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>

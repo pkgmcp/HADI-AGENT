@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HADI Agent — Enterprise Laravel AI Orchestration</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>HADI</h2>
+      <div class="sub">Agent &amp; MCP Framework</div>
+    </div>
+    <div class="search-box">
+      <input type="text" id="docSearch" placeholder="Search docs... (جستجو)" oninput="searchDocs(this.value)">
+    </div>
+    <nav class="sidebar-nav">
+      <a href="index.html" class="active">🏠 Home / صفحه اصلی</a>
+      <a href="getting-started.html">🚀 Getting Started / شروع</a>
+      <a href="architecture.html">🏗️ Architecture / معماری</a>
+      <div class="section-title">Core Modules</div>
+      <a href="mcp-server.html">⚡ MCP Server / سرور MCP</a>
+      <a href="agents.html">🤖 AI Agents / عامل‌ها</a>
+      <a href="ai-providers.html">🔌 AI Providers / ارائه‌دهنده‌ها</a>
+      <a href="workflows.html">🔄 Workflows / گردش کار</a>
+      <div class="section-title">Reference</div>
+      <a href="api-reference.html">📡 API Reference / مرجع API</a>
+      <a href="examples.html">💡 Examples / نمونه‌ها</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <section class="hero">
+      <h1>
+        HADI Agent
+        <span class="fa-title" lang="fa">نماینده هوشمند لاراول</span>
+      </h1>
+      <p>Enterprise Laravel AI orchestration framework — MCP servers, multi-agent systems, and production-grade workflow engine.</p>
+      <div class="badge-row">
+        <span class="tag tag-green">Laravel 12</span>
+        <span class="tag tag-blue">MCP Ready</span>
+        <span class="tag tag-amber">Multi-Provider</span>
+        <span class="tag tag-red">Production Grade</span>
+      </div>
+    </section>
+
+    <h2>Overview / نمای کلی</h2>
+    <p>HADI (Hyper-Automated Development Intelligence) is a Laravel-native framework for building AI-powered applications. It provides a complete MCP (Model Context Protocol) server architecture, a multi-agent orchestration system, and a flexible workflow engine — all following clean architecture and SOLID principles.</p>
+    <div class="fa-note" lang="fa">
+      HADI یک فریم‌ورک لاراولی برای ساخت برنامه‌های مبتنی بر هوش مصنوعی است. این سیستم شامل سرور MCP، معماری چندعاملی، و موتور گردش کار می‌باشد.
+    </div>
+
+    <h2>Key Features / ویژگی‌های کلیدی</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h4>⚡ MCP Server</h4>
+        <p>Full Model Context Protocol server with provider routing, token tracking, cost analysis, and context management.</p>
+        <span class="badge">Core</span>
+      </div>
+      <div class="card">
+        <h4>🤖 AI Agents</h4>
+        <p>8 specialized agents: Planner, Coder, Reviewer, Debugger, Memory, Security, Deployment, Workflow.</p>
+        <span class="badge">Core</span>
+      </div>
+      <div class="card">
+        <h4>🔄 Workflow Engine</h4>
+        <p>Multi-step workflow execution with prompt, function, condition, parallel, and agent step types.</p>
+        <span class="badge">Core</span>
+      </div>
+      <div class="card">
+        <h4>🔌 Multi-Provider</h4>
+        <p>OpenAI, Anthropic, Gemini, Ollama, DeepSeek — with auto-fallback, load balancing, and cost optimization.</p>
+        <span class="badge">Integration</span>
+      </div>
+      <div class="card">
+        <h4>📊 Token Tracking</h4>
+        <p>Real-time token usage monitoring, cost analytics, budget alerts, and daily projections.</p>
+        <span class="badge">Monitoring</span>
+      </div>
+      <div class="card">
+        <h4>🧠 Memory System</h4>
+        <p>Vector memory, conversation context, semantic search, and configurable context window management.</p>
+        <span class="badge">AI</span>
+      </div>
+    </div>
+
+    <h2>Architecture at a Glance / معماری در یک نگاه</h2>
+    <pre>
+┌─────────────────────────────────────────────┐
+│               HTTP Layer                     │
+│  (Controllers, Middleware, Form Requests)    │
+├─────────────────────────────────────────────┤
+│           Orchestration Layer                │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
+│  │   MCP    │  │  Agents  │  │Workflows │  │
+│  │  Server  │  │  System  │  │  Engine  │  │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  │
+├───────┼──────────────┼──────────────┼────────┤
+│       └──────────────┼──────────────┘        │
+│                  ┌────▼─────┐                │
+│                  │Provider  │                │
+│                  │ Router   │                │
+│                  └────┬─────┘                │
+├───────────────────────┼──────────────────────┤
+│            AI Provider Layer                 │
+│  OpenAI  Anthropic  Gemini  Ollama  DeepSeek │
+└──────────────────────────────────────────────┘
+    </pre>
+
+    <h2>Quick Start / شروع سریع</h2>
+    <pre>
+<span class="lang-tag">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>composer require hadi/hadi-agent
+php artisan vendor:publish --tag=hadi-config
+php artisan migrate
+    </pre>
+    <div class="fa-note" lang="fa">
+      برای شروع سریع، کافیست پکیج را نصب کرده، کانفیگ‌ها را انتشار دهید و میگریشن‌ها را اجرا کنید.
+    </div>
+
+    <pre>
+<span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// Send a message to the MCP server
+$response = app(\App\Services\MCP\MCPServer::class)->handle(
+    new \App\DTOs\MCPMessageDTO(
+        role: 'user',
+        content: 'Generate a Laravel authentication system',
+        metadata: ['provider' => 'openai']
+    )
+);
+
+echo $response->content; // AI-generated response
+    </pre>
+
+    <h2>Modules Overview / ماژول‌ها</h2>
+    <table>
+      <tr><th>Module</th><th>Description / توضیحات</th><th>Status</th></tr>
+      <tr><td>MCP Server</td><td>Multi-provider AI routing, token tracking, cost analysis</td><td><span class="tag tag-green">Stable</span></td></tr>
+      <tr><td>AI Agents</td><td>8 specialized agents with clean architecture</td><td><span class="tag tag-green">Stable</span></td></tr>
+      <tr><td>Workflow Engine</td><td>Multi-step workflow with 5 step types</td><td><span class="tag tag-green">Stable</span></td></tr>
+      <tr><td>Provider Router</td><td>Latency/cost/random routing with fallback</td><td><span class="tag tag-green">Stable</span></td></tr>
+      <tr><td>Context Manager</td><td>Session-based conversation context with trimming</td><td><span class="tag tag-green">Stable</span></td></tr>
+      <tr><td>Token Observer</td><td>Usage tracking, alerts, and persistence</td><td><span class="tag tag-green">Stable</span></td></tr>
+    </table>
+
+    <div class="footer">
+      HADI Agent v1.0.0 — Built for Laravel — <a href="https://laravel.com">Laravel</a> • <a href="#">Docs</a> • <a href="#">GitHub</a>
+      <br>توسعه داده شده برای لاراول
+    </div>
+  </main>
+</div>
+
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('pre');
+  const code = pre.querySelector(':scope > code') || pre;
+  const text = code.textContent.replace(btn.textContent, '').trim();
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+
+function searchDocs(q) {
+  const links = document.querySelectorAll('.sidebar-nav a');
+  const term = q.toLowerCase().trim();
+  links.forEach(a => {
+    const text = a.textContent.toLowerCase();
+    a.style.display = !term || text.includes(term) ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>

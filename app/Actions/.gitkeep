@@ -1,0 +1,2 @@
+Place Action classes here — single-action classes following Laravel's action pattern.
+Example: RegisterUserAction, ProcessPaymentAction, etc.

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examples — HADI Agent</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h2>HADI</h2><div class="sub">Agent &amp; MCP Framework</div></div>
+    <div class="search-box"><input type="text" placeholder="Search..." oninput="searchDocs(this.value)"></div>
+    <nav class="sidebar-nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="getting-started.html">🚀 Getting Started</a>
+      <a href="architecture.html">🏗️ Architecture</a>
+      <div class="section-title">Core Modules</div>
+      <a href="mcp-server.html">⚡ MCP Server</a>
+      <a href="agents.html">🤖 AI Agents</a>
+      <a href="ai-providers.html">🔌 AI Providers</a>
+      <a href="workflows.html">🔄 Workflows</a>
+      <div class="section-title">Reference</div>
+      <a href="api-reference.html">📡 API Reference</a>
+      <a href="examples.html" class="active">💡 Examples</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <h1>Examples <span class="fa-title" lang="fa">نمونه کدها</span></h1>
+    <p>Practical code examples covering real-world use cases.</p>
+
+    <h2>1. Basic MCP Chat</h2>
+    <p>Send a message and get an AI response via the MCP server:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>use App\DTOs\MCPMessageDTO;
+use App\Services\MCP\MCPServer;
+
+$server = app(MCPServer::class);
+
+$response = $server->handle(
+    new MCPMessageDTO(
+        role: 'user',
+        content: 'Explain Laravel service providers in simple terms',
+        metadata: [
+            'provider' => 'openai',
+            'temperature' => 0.5,
+        ],
+    )
+);
+
+echo "Response: {$response->content}\n";
+echo "Tokens: {$response->totalTokens()} ({$response->inputTokens} in / {$response->outputTokens} out)\n";
+echo "Cost: \${$response->cost}\n";
+echo "Latency: {$response->latencyMs}ms\n";</pre>
+
+    <h2>2. Multi-Provider Fallback</h2>
+    <p>Configure automatic fallback when the primary provider fails:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// config/mcp.php
+'default_provider' => 'openai',
+
+// .env
+AI_FALLBACK_ENABLED=true
+AI_FALLBACK_PROVIDER=ollama    # Falls back to local Ollama
+
+// Usage — automatic fallback
+$response = $server->handle(
+    new MCPMessageDTO(
+        role: 'user',
+        content: 'Write a PHP function to validate email',
+        metadata: ['provider' => 'nonexistent'],  // Will fail → fallback
+    )
+);
+
+// Or use ProviderRouter directly
+$router = app(\App\Services\MCP\ProviderRouter::class);
+$response = $router->routeWithFallback($request);</pre>
+
+    <h2>3. Agent-Based Code Generation Pipeline</h2>
+    <p>Use multiple agents in sequence to generate and review code:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>use App\Services\Agents\{PlannerAgent, CoderAgent, ReviewAgent, SecurityAgent};
+
+// Step 1: Plan
+$planner = app(PlannerAgent::class);
+$plan = $planner->createExecutionPlan(
+    'Build a Laravel REST API with authentication',
+    ['framework' => 'Laravel 12', 'features' => ['auth', 'crud', 'api']]
+);
+
+// Step 2: Generate code
+$coder = app(CoderAgent::class);
+foreach ($plan['files'] as $file) {
+    $result = $coder->generateFile($file['path'], $file['spec']);
+    file_put_contents(base_path($file['path']), $result['content']);
+}
+
+// Step 3: Review
+$reviewer = app(ReviewAgent::class);
+$review = $reviewer->reviewCode(
+    file_get_contents(base_path('app/Http/Controllers/Api/AuthController.php')),
+    'php'
+);
+
+// Step 4: Security audit
+$security = app(SecurityAgent::class);
+$audit = $security->auditCode(
+    file_get_contents(base_path('app/Http/Controllers/Api/AuthController.php'))
+);
+
+echo "Review findings: " . count($review['findings']) . "\n";
+echo "Security issues: " . count($audit['vulnerabilities']) . "\n";</pre>
+
+    <h2>4. Workflow-Driven Code Review</h2>
+    <p>A complete workflow that analyzes, reviews, and reports on code quality:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>use App\DTOs\WorkflowDTO;
+use App\Services\MCP\WorkflowEngine;
+
+$engine = app(WorkflowEngine::class);
+
+$code = file_get_contents(base_path('app/Models/User.php'));
+
+$dto = new WorkflowDTO('Complete Code Review', [
+    [
+        'name' => 'analyze',
+        'type' => 'prompt',
+        'prompt' => 'Analyze this Laravel code and provide a summary: {{context.code}}',
+    ],
+    [
+        'name' => 'security_review',
+        'type' => 'agent',
+        'agent' => 'security',
+        'task' => 'Audit this code: {{results.analyze.content}}',
+    ],
+    [
+        'name' => 'quality_check',
+        'type' => 'prompt',
+        'prompt' => 'Rate code quality 1-10 and suggest improvements: {{context.code}}',
+    ],
+    [
+        'name' => 'generate_report',
+        'type' => 'prompt',
+        'prompt' => 'Create a markdown report combining these findings:
+            Analysis: {{results.analyze.content}}
+            Security: {{results.security_review.content}}
+            Quality: {{results.quality_check.content}}',
+    ],
+], context: ['code' => $code]);
+
+$id = $engine->create($dto);
+$result = $engine->execute($id);
+
+// Save report
+file_put_contents(
+    storage_path('reports/code-review-' . now()->timestamp . '.md'),
+    $result['results']['generate_report']['content']
+);
+
+echo "Review complete: {$result['status']}\n";</pre>
+
+    <h2>5. Token Usage Dashboard (PHP)</h2>
+    <p>Generate a cost summary using the TokenObserver and CostAnalyzer:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>use App\Services\MCP\{TokenObserver, CostAnalyzer};
+
+$observer = app(TokenObserver::class);
+$analyzer = app(CostAnalyzer::class);
+
+// Get daily summary
+$dailySummary = $observer->summary();
+echo "Daily tokens: {$dailySummary['daily_tokens']}\n";
+echo "Active sessions: {$dailySummary['total_sessions']}\n";
+
+// Cost breakdown
+$costSummary = $analyzer->summary();
+echo "Total cost today: \${$costSummary['total']}\n";
+echo "By provider:\n";
+foreach ($costSummary['by_provider'] as $provider => $cost) {
+    echo "  - {$provider}: \${$cost}\n";
+}
+
+// Budget check
+$budget = $analyzer->budgetUtilization();
+echo "Budget: \${$budget['budget']}\n";
+echo "Spent: \${$budget['spent']}\n";
+echo "Remaining: \${$budget['remaining']}\n";
+echo "Utilization: {$budget['utilization_percent']}%\n";
+
+// 30-day projection
+$projection = $analyzer->projection(30);
+echo "30-day projection: \${$projection}\n";</pre>
+
+    <h2>6. Custom AI Provider</h2>
+    <p>Integrate your own LLM by implementing the provider interface:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>use App\Interfaces\AIProviderInterface;
+use App\DTOs\{AIRequestDTO, AIResponseDTO};
+
+class CustomProvider implements AIProviderInterface
+{
+    public function send(AIRequestDTO $request): AIResponseDTO
+    {
+        // Call your custom LLM API
+        $response = Http::post('https://your-llm-api.com/generate', [
+            'prompt' => $request->prompt,
+            'max_tokens' => $request->maxTokens,
+        ]);
+
+        return new AIResponseDTO(
+            content: $response->json('text'),
+            provider: 'custom-llm',
+            model: $request->model,
+            inputTokens: $request->maxTokens,
+            outputTokens: strlen($response->json('text')),
+            cost: 0.001,
+            latencyMs: 200,
+        );
+    }
+
+    public function stream(AIRequestDTO $request): iterable { yield ''; }
+    public function name(): string { return 'custom-llm'; }
+    public function isAvailable(): bool { return true; }
+    public function models(): array { return ['custom-v1']; }
+    public function calculateCost(int $in, int $out): float { return 0.001; }
+}
+
+// Register it
+$server = app(\App\Services\MCP\MCPServer::class);
+$server->registerProvider('custom-llm', new CustomProvider);</pre>
+
+    <h2>7. Memory-Enhanced Chat</h2>
+    <p>Use MemoryAgent to maintain context across sessions:</p>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$memory = app(\App\Services\Agents\MemoryAgent::class);
+$server = app(\App\Services\MCP\MCPServer::class);
+
+$sessionId = 'user_chat_' . auth()->id();
+
+// Store conversation history
+$memory->store("session_{$sessionId}", [
+    'context' => $server->handle(
+        new MCPMessageDTO('user', 'My name is John', metadata: ['session_id' => $sessionId])
+    )->content,
+]);
+
+// Later — retrieve context
+$previousContext = $memory->retrieve("session_{$sessionId}");
+$memory->store("session_{$sessionId}", [
+    'context' => $previousContext['context'] . "\n" .
+        $server->handle(new MCPMessageDTO('user', 'What is my name?', metadata: ['session_id' => $sessionId])
+    )->content,
+]);
+
+// Search memory
+$results = $memory->search('John');
+echo "Found " . count($results) . " relevant memories\n";</pre>
+
+    <h2>8. Environment Validation (Deployment Agent)</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>$deployment = app(\App\Services\Agents\DeploymentAgent::class);
+
+// Validate your Laravel .env
+$validation = $deployment->validateEnvironment([
+    'APP_ENV' => 'production',
+    'APP_DEBUG' => false,
+    'DB_CONNECTION' => 'mysql',
+    'REDIS_HOST' => '127.0.0.1',
+    'QUEUE_CONNECTION' => 'redis',
+    'SESSION_DRIVER' => 'redis',
+    'CACHE_STORE' => 'redis',
+]);
+
+if (!empty($validation['issues'])) {
+    foreach ($validation['issues'] as $issue) {
+        echo "[{$issue['severity']}] {$issue['message']}\n";
+    }
+}
+
+// Generate Dockerfile
+$dockerfile = $deployment->generateDockerfile(
+    'laravel',
+    ['php' => '8.3', 'node' => '20', 'database' => 'postgresql']
+);
+file_put_contents(base_path('Dockerfile'), $dockerfile);</pre>
+
+    <h2>9. cURL API Examples</h2>
+    <pre><span class="lang-tag">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button># Health check
+curl http://localhost:8000/api/v1/health
+
+# Send MCP message
+curl -X POST http://localhost:8000/api/v1/mcp/messages \
+  -H "Content-Type: application/json" \
+  -H "X-Session-Id: my_session" \
+  -d '{
+    "role": "user",
+    "content": "Write a PHP array sort function",
+    "metadata": {"provider": "openai"}
+  }'
+
+# Execute agent
+curl -X POST http://localhost:8000/api/v1/agents/planner/execute \
+  -H "Content-Type: application/json" \
+  -d '{"task": "Plan a blog platform API"}'
+
+# Create workflow
+curl -X POST http://localhost:8000/api/v1/workflows \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test WF",
+    "steps": [{"name": "s1", "type": "prompt", "prompt": "Hello"}]
+  }'
+
+# Execute workflow
+curl -X POST http://localhost:8000/api/v1/workflows/{wf_id}/execute
+
+# Check status
+curl http://localhost:8000/api/v1/workflows/{wf_id}/status</pre>
+
+    <h2>10. Testing with MockProvider</h2>
+    <pre><span class="lang-tag">php</span><button class="copy-btn" onclick="copyCode(this)">Copy</button>// tests/Mock/MockAIProvider.php
+class MockAIProvider implements AIProviderInterface
+{
+    public function send(AIRequestDTO $request): AIResponseDTO
+    {
+        return new AIResponseDTO(
+            content: "Mock: {$request->prompt}",
+            provider: 'mock',
+            model: 'mock-v1',
+            inputTokens: 10,
+            outputTokens: 20,
+            cost: 0.001,
+            latencyMs: 50,
+        );
+    }
+    // ... other methods
+}
+
+// In your test
+it('works with mock provider', function () {
+    $server = app(MCPServer::class);
+    $server->registerProvider('mock', new MockAIProvider);
+
+    $response = $server->handle(
+        new MCPMessageDTO('user', 'Test message', metadata: ['provider' => 'mock'])
+    );
+
+    expect($response->content)->toContain('Mock:');
+});</pre>
+
+    <div class="footer">HADI Agent v1.0.0 — Examples &amp; Code Samples</div>
+  </main>
+</div>
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('pre');
+  const code = pre.querySelector(':scope > code') || pre;
+  const text = code.textContent.replace(btn.textContent, '').trim();
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+function searchDocs(q) {
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.style.display = !q.toLowerCase().trim() || a.textContent.toLowerCase().includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+</script>
+</body>
+</html>
