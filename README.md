@@ -167,6 +167,17 @@ app/
 
 # Coverage
 ./vendor/bin/pest --coverage
+
+## CI / Continuous Integration
+
+We provide a GitHub Actions workflow to validate the package and run tests on push/PRs.
+
+Key checks:
+- `composer validate` — ensures `composer.json` is valid
+- `composer install` — installs dependencies
+- `composer test` — runs the test suite (Pest)
+
+The workflow is defined in `.github/workflows/ci.yml` and runs on PHP 8.3.
 ```
 
 ## Documentation / مستندات
