@@ -3,10 +3,15 @@
     "description": "Hadi Agent Laravel package",
     "type": "library",
     "license": "MIT",
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
     "authors": [
         {
             "name": "pkgmcp",
-            "email": "maintainer@pkgmcp.com"
+            "email": "pkgmcp@gmail.com"
         }
     ],
     "require": {
