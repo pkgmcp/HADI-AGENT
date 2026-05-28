@@ -1,1 +1,7 @@
 node_modules/
+/vendor/
+/.env
+/.idea/
+/.vscode/
+/.phpunit.result.cache
+/.DS_Store
